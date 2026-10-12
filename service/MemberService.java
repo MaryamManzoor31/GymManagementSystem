@@ -1,6 +1,7 @@
 package service;
 
 import model.Member;
+import exception.DuplicateMemberIdException;
 import exception.InvalidAgeException;
 import exception.InvalidPhoneException;
 import exception.MemberNotFoundException;
@@ -19,12 +20,21 @@ public class MemberService {
 
     // Adds a new member after validating age and phone number rules.
     public void addMember(Member member)
-            throws InvalidAgeException, InvalidPhoneException {
+            throws DuplicateMemberIdException, InvalidAgeException, InvalidPhoneException {
+
+        for (Member existingMember : members) {
+            if (existingMember.getMemberId() == member.getMemberId()) {
+                throw new DuplicateMemberIdException(
+                        "A member with ID " + member.getMemberId() + " already exists."
+                );
+            }
+        }
 
         validateAge(member.getAge());
         validatePhone(member.getPhone());
 
         members.add(member);
+        Member.incrementMemberCount();
 
         System.out.println("Member added successfully.");
     }

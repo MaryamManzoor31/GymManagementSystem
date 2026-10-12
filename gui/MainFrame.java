@@ -17,6 +17,7 @@ import service.ScheduleService;
 import util.FileManager;
 import util.ReportTask;
 
+import exception.DuplicateMemberIdException;
 import exception.InvalidAgeException;
 import exception.InvalidPhoneException;
 
@@ -233,6 +234,8 @@ public class MainFrame extends JFrame {
 
         } catch (NumberFormatException e) {
             outputArea.setText("Please enter valid numbers for ID and Age.");
+        } catch (DuplicateMemberIdException e) {
+            outputArea.setText(e.getMessage());
         } catch (InvalidAgeException e) {
             outputArea.setText(e.getMessage());
         } catch (InvalidPhoneException e) {
