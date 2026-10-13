@@ -1,5 +1,6 @@
 package service;
 
+import dao.MemberDao;
 import model.Member;
 import exception.DuplicateMemberIdException;
 import exception.InvalidAgeException;
@@ -7,20 +8,29 @@ import exception.InvalidPhoneException;
 import exception.MemberNotFoundException;
 
 import java.util.ArrayList;
+import java.sql.SQLException;
 
 // Module M3: Member management service.
 // This class handles member registration, validation, lookup, and removal using an ArrayList.
 public class MemberService {
 
     private ArrayList<Member> members;
+    private final MemberDao memberDao;
 
     public MemberService() {
         members = new ArrayList<>();
+        memberDao = new MemberDao();
+    }
+
+    public void loadFromDatabase() throws SQLException {
+        members.clear();
+        members.addAll(memberDao.getAllMembers());
+        Member.setMemberCount(members.size());
     }
 
     // Adds a new member after validating age and phone number rules.
     public void addMember(Member member)
-            throws DuplicateMemberIdException, InvalidAgeException, InvalidPhoneException {
+            throws DuplicateMemberIdException, InvalidAgeException, InvalidPhoneException, SQLException {
 
         for (Member existingMember : members) {
             if (existingMember.getMemberId() == member.getMemberId()) {
@@ -33,6 +43,13 @@ public class MemberService {
         validateAge(member.getAge());
         validatePhone(member.getPhone());
 
+        if (memberDao.exists(member.getMemberId())) {
+            throw new DuplicateMemberIdException(
+                    "A member with ID " + member.getMemberId() + " already exists."
+            );
+        }
+
+        memberDao.addMember(member);
         members.add(member);
         Member.incrementMemberCount();
 

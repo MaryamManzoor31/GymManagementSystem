@@ -3,6 +3,9 @@ package gui;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 import model.Member;
 import model.RegularMember;
@@ -20,6 +23,8 @@ import util.ReportTask;
 import exception.DuplicateMemberIdException;
 import exception.InvalidAgeException;
 import exception.InvalidPhoneException;
+import exception.MemberNotFoundException;
+import database.DatabaseSetup;
 
 // Module M1: Main GUI module.
 // This class creates the gym management dashboard and connects the UI with all services.
@@ -40,12 +45,15 @@ public class MainFrame extends JFrame {
     ScheduleService scheduleService;
     java.util.Stack<String> recentActions;
 
-    public MainFrame() {
+    public MainFrame() throws SQLException {
         // Initialize all services to demonstrate Collections
         memberService = new MemberService();       // ArrayList
         trainerService = new TrainerService();     // Vector
         scheduleService = new ScheduleService();   // Queue
         recentActions = new java.util.Stack<>();   // Stack
+        memberService.loadFromDatabase();
+        trainerService.loadFromDatabase();
+        scheduleService.loadFromDatabase();
 
         setTitle("Gym Membership Management System");
         setSize(800, 750);
@@ -147,19 +155,33 @@ public class MainFrame extends JFrame {
         addTrainerBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String tName = JOptionPane.showInputDialog("Enter Trainer Name:");
-                if(tName != null && !tName.isEmpty()) {
-                    Trainer t = new Trainer(1, tName, "General Fitness", "9876543210");
-                    trainerService.addTrainer(t);
-                    recentActions.push("Added Trainer: " + tName); // Demonstrates Stack
-                    outputArea.setText("Trainer added to Vector.");
+                if (tName != null && !tName.trim().isEmpty()) {
+                    Trainer trainer = new Trainer(0, tName.trim(), "General Fitness", "9876543210");
+                    try {
+                        Trainer savedTrainer = trainerService.addTrainer(trainer);
+                        recentActions.push("Added Trainer: " + savedTrainer.getName()); // Demonstrates Stack
+                        outputArea.setText("Trainer saved to the database with ID "
+                                + savedTrainer.getTrainerId() + ".");
+                    } catch (SQLException ex) {
+                        showDatabaseError(ex);
+                    }
                 }
             }
         });
 
         showTrainersBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                outputArea.setText("Trainers details printed to the Console.\n");
-                trainerService.displayTrainers();
+                outputArea.setText("");
+                for (Trainer trainer : trainerService.getTrainers()) {
+                    outputArea.append("ID: " + trainer.getTrainerId() + "\n");
+                    outputArea.append("Name: " + trainer.getName() + "\n");
+                    outputArea.append("Specialization: " + trainer.getSpecialization() + "\n");
+                    outputArea.append("Phone: " + trainer.getPhone() + "\n");
+                    outputArea.append("--------------------\n");
+                }
+                if (trainerService.getTrainers().isEmpty()) {
+                    outputArea.setText("No trainers saved yet.");
+                }
             }
         });
 
@@ -167,11 +189,50 @@ public class MainFrame extends JFrame {
         addScheduleBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String activity = JOptionPane.showInputDialog("Enter Activity (e.g. Yoga):");
-                if(activity != null && !activity.isEmpty()) {
-                    FitnessSchedule fs = new FitnessSchedule(1, "Member", "Trainer", activity, "Today", "Morning");
-                    scheduleService.addSchedule(fs);
-                    recentActions.push("Added Schedule: " + activity);
-                    outputArea.setText("Schedule added to Queue.");
+                if (activity == null || activity.trim().isEmpty()) {
+                    return;
+                }
+                String memberIdInput = JOptionPane.showInputDialog("Enter an existing Member ID:");
+                if (memberIdInput == null) {
+                    return;
+                }
+                String trainerIdInput = JOptionPane.showInputDialog("Enter an existing Trainer ID:");
+                if (trainerIdInput == null) {
+                    return;
+                }
+                String dateInput = JOptionPane.showInputDialog("Enter date (YYYY-MM-DD):");
+                if (dateInput == null) {
+                    return;
+                }
+                String timeInput = JOptionPane.showInputDialog("Enter time (HH:MM, 24-hour):");
+                if (timeInput == null) {
+                    return;
+                }
+
+                try {
+                    int memberId = Integer.parseInt(memberIdInput.trim());
+                    int trainerId = Integer.parseInt(trainerIdInput.trim());
+                    Member member = memberService.searchMember(memberId);
+                    Trainer trainer = trainerService.getTrainers().stream()
+                            .filter(item -> item.getTrainerId() == trainerId)
+                            .findFirst()
+                            .orElseThrow(() -> new IllegalArgumentException(
+                                    "Trainer ID " + trainerId + " was not found."));
+                    String date = LocalDate.parse(dateInput.trim()).toString();
+                    String time = LocalTime.parse(timeInput.trim()).toString();
+                    FitnessSchedule schedule = new FitnessSchedule(
+                            0, memberId, trainerId, member.getName(), trainer.getName(),
+                            activity.trim(), date, time);
+                    FitnessSchedule savedSchedule = scheduleService.addSchedule(schedule);
+                    recentActions.push("Added Schedule: " + savedSchedule.getActivity());
+                    outputArea.setText("Schedule saved to the database with ID "
+                            + savedSchedule.getScheduleId() + ".");
+                } catch (NumberFormatException ex) {
+                    outputArea.setText("Member ID and Trainer ID must be valid numbers.");
+                } catch (MemberNotFoundException | IllegalArgumentException ex) {
+                    outputArea.setText(ex.getMessage());
+                } catch (SQLException ex) {
+                    showDatabaseError(ex);
                 }
             }
         });
@@ -240,6 +301,8 @@ public class MainFrame extends JFrame {
             outputArea.setText(e.getMessage());
         } catch (InvalidPhoneException e) {
             outputArea.setText(e.getMessage());
+        } catch (SQLException e) {
+            showDatabaseError(e);
         }
     }
 
@@ -255,6 +318,27 @@ public class MainFrame extends JFrame {
     }
 
     public static void main(String[] args) {
-        new MainFrame();
+        SwingUtilities.invokeLater(() -> {
+            try {
+                DatabaseSetup.initializeDatabase();
+                new MainFrame();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Could not connect to or initialize MySQL.\n"
+                                + "Check that MySQL is running, the JDBC driver is available, "
+                                + "and the configured credentials are correct.\n\n"
+                                + e.getMessage(),
+                        "Database startup failed",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
+    }
+
+    private void showDatabaseError(SQLException e) {
+        e.printStackTrace();
+        outputArea.setText("Database operation failed: " + e.getMessage());
     }
 }

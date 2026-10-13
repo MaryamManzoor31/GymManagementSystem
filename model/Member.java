@@ -79,4 +79,8 @@ public abstract class Member implements Displayable {
     public static void incrementMemberCount() {
         memberCount++;
     }
+
+    public static void setMemberCount(int count) {
+        memberCount = count;
+    }
 }
