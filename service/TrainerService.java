@@ -55,4 +55,16 @@ public class TrainerService {
     public List<Trainer> getTrainers() {
         return trainers;
     }
+
+    public boolean removeTrainer(int trainerId) throws SQLException {
+        boolean deleted = trainerDao.deleteTrainer(trainerId);
+        if (deleted) {
+            for (int i = trainers.size() - 1; i >= 0; i--) {
+                if (trainers.get(i).getTrainerId() == trainerId) {
+                    trainers.remove(i);
+                }
+            }
+        }
+        return deleted;
+    }
 }

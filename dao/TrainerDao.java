@@ -51,4 +51,36 @@ public class TrainerDao {
         }
         return trainers;
     }
+
+    public boolean deleteTrainer(int trainerId) throws SQLException {
+        String deleteSchedules = "DELETE FROM fitness_schedules WHERE trainer_id = ?";
+        String deleteTrainer = "DELETE FROM trainers WHERE trainer_id = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement statement = connection.prepareStatement(deleteSchedules)) {
+                    statement.setInt(1, trainerId);
+                    statement.executeUpdate();
+                }
+
+                int deleted;
+                try (PreparedStatement statement = connection.prepareStatement(deleteTrainer)) {
+                    statement.setInt(1, trainerId);
+                    deleted = statement.executeUpdate();
+                }
+
+                if (deleted == 0) {
+                    connection.rollback();
+                    return false;
+                }
+
+                connection.commit();
+                return true;
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
+        }
+    }
 }

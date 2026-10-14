@@ -64,4 +64,36 @@ public class MemberDao {
             }
         }
     }
+
+    public boolean deleteMember(int memberId) throws SQLException {
+        String deleteSchedules = "DELETE FROM fitness_schedules WHERE member_id = ?";
+        String deleteMember = "DELETE FROM members WHERE member_id = ?";
+
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement statement = connection.prepareStatement(deleteSchedules)) {
+                    statement.setInt(1, memberId);
+                    statement.executeUpdate();
+                }
+
+                int deleted;
+                try (PreparedStatement statement = connection.prepareStatement(deleteMember)) {
+                    statement.setInt(1, memberId);
+                    deleted = statement.executeUpdate();
+                }
+
+                if (deleted == 0) {
+                    connection.rollback();
+                    return false;
+                }
+
+                connection.commit();
+                return true;
+            } catch (SQLException e) {
+                connection.rollback();
+                throw e;
+            }
+        }
+    }
 }

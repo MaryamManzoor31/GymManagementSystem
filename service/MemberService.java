@@ -124,11 +124,15 @@ public class MemberService {
 
     // Removes a member if the ID exists; otherwise the search throws an exception.
     public void removeMember(int id)
-            throws MemberNotFoundException {
+            throws MemberNotFoundException, SQLException {
 
         Member member = searchMember(id);
+        if (!memberDao.deleteMember(id)) {
+            throw new MemberNotFoundException("Member with ID " + id + " not found.");
+        }
 
         members.remove(member);
+        Member.setMemberCount(members.size());
 
         System.out.println("Member removed successfully.");
     }

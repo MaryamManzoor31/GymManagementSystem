@@ -4,6 +4,7 @@ import dao.ScheduleDao;
 import model.FitnessSchedule;
 
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -45,18 +46,16 @@ public class ScheduleService {
     }
 
     // Removes and processes the earliest schedule in the queue.
-    public void processSchedule() {
+    public FitnessSchedule processSchedule() {
 
         if (schedules.isEmpty()) {
-
             System.out.println("No schedules available.");
-
-        } else {
-
-            FitnessSchedule schedule = schedules.remove();
-
-            schedule.displaySchedule();
+            return null;
         }
+
+        FitnessSchedule schedule = schedules.remove();
+        schedule.displaySchedule();
+        return schedule;
     }
 
     // Displays all pending schedules remaining in the queue.
@@ -78,5 +77,25 @@ public class ScheduleService {
 
     public List<FitnessSchedule> getSchedules() {
         return new LinkedList<>(schedules);
+    }
+
+    public void removeSchedulesForMember(int memberId) {
+        Iterator<FitnessSchedule> iterator = schedules.iterator();
+        while (iterator.hasNext()) {
+            FitnessSchedule schedule = iterator.next();
+            if (schedule.getMemberId() == memberId) {
+                iterator.remove();
+            }
+        }
+    }
+
+    public void removeSchedulesForTrainer(int trainerId) {
+        Iterator<FitnessSchedule> iterator = schedules.iterator();
+        while (iterator.hasNext()) {
+            FitnessSchedule schedule = iterator.next();
+            if (schedule.getTrainerId() == trainerId) {
+                iterator.remove();
+            }
+        }
     }
 }

@@ -1,7 +1,6 @@
 package database;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -12,8 +11,6 @@ public final class DatabaseSetup {
     }
 
     public static void initializeDatabase() throws SQLException {
-        String createDatabase = "CREATE DATABASE IF NOT EXISTS " + DatabaseConfig.DATABASE;
-
         String createMembershipPlans = "CREATE TABLE IF NOT EXISTS membership_plans ("
                 + "plan_id INT AUTO_INCREMENT PRIMARY KEY, "
                 + "plan_name VARCHAR(100) NOT NULL, "
@@ -44,13 +41,6 @@ public final class DatabaseSetup {
                 + "schedule_time TIME NOT NULL, "
                 + "FOREIGN KEY (member_id) REFERENCES members(member_id), "
                 + "FOREIGN KEY (trainer_id) REFERENCES trainers(trainer_id))";
-
-        try (Connection serverConnection = DriverManager.getConnection(
-                DatabaseConfig.SERVER_URL, DatabaseConfig.USER, DatabaseConfig.PASSWORD);
-             Statement serverStatement = serverConnection.createStatement()) {
-
-            serverStatement.executeUpdate(createDatabase);
-        }
 
         try (Connection connection = DatabaseConnection.getConnection();
              Statement statement = connection.createStatement()) {

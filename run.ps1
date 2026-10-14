@@ -1,6 +1,5 @@
 param(
-    [string]$MySqlConnectorJar = ".\lib\mysql-connector-j-8.4.0.jar",
-    [string]$DatabaseUser = "root"
+    [string]$MySqlConnectorJar = ".\lib\mysql-connector-j-8.4.0.jar"
 )
 
 $ErrorActionPreference = "Stop"
@@ -41,24 +40,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $runtimeClasspath = "$classesDirectory;$connectorJar"
-$previousUser = $env:GYM_DB_USER
-$previousPassword = $env:GYM_DB_PASSWORD
-$passwordPointer = [IntPtr]::Zero
-
-try {
-    $securePassword = Read-Host "MySQL password for $DatabaseUser" -AsSecureString
-    $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
-    $env:GYM_DB_USER = $DatabaseUser
-    $env:GYM_DB_PASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
-
-    & $java.Source -cp $runtimeClasspath Main
-    if ($LASTEXITCODE -ne 0) {
-        throw "The application exited with code $LASTEXITCODE."
-    }
-} finally {
-    if ($passwordPointer -ne [IntPtr]::Zero) {
-        [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
-    }
-    $env:GYM_DB_USER = $previousUser
-    $env:GYM_DB_PASSWORD = $previousPassword
+& $java.Source -cp $runtimeClasspath Main
+if ($LASTEXITCODE -ne 0) {
+    throw "The application exited with code $LASTEXITCODE."
 }

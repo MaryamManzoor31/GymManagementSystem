@@ -6,6 +6,8 @@ import java.awt.event.ActionListener;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 
 import model.Member;
 import model.RegularMember;
@@ -33,9 +35,9 @@ public class MainFrame extends JFrame {
     JLabel idLabel, nameLabel, ageLabel, phoneLabel;
     JTextField idField, nameField, ageField, phoneField;
 
-    JButton regularButton, premiumButton, displayButton;
-    JButton addTrainerBtn, showTrainersBtn;
-    JButton addScheduleBtn, processScheduleBtn;
+    JButton regularButton, premiumButton, displayButton, deleteMemberBtn;
+    JButton addTrainerBtn, showTrainersBtn, deleteTrainerBtn;
+    JButton addScheduleBtn, processScheduleBtn, showSchedulesBtn;
     JButton reportBtn, recentActionBtn;
 
     JTextArea outputArea;
@@ -56,9 +58,10 @@ public class MainFrame extends JFrame {
         scheduleService.loadFromDatabase();
 
         setTitle("Gym Membership Management System");
-        setSize(800, 750);
+        setSize(1000, 900);
         setLayout(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
 
         // Labels for Member Input
         idLabel = new JLabel("Member ID:");
@@ -66,10 +69,10 @@ public class MainFrame extends JFrame {
         ageLabel = new JLabel("Age:");
         phoneLabel = new JLabel("Phone:");
 
-        idLabel.setBounds(150, 40, 150, 30);
-        nameLabel.setBounds(150, 90, 150, 30);
-        ageLabel.setBounds(150, 140, 150, 30);
-        phoneLabel.setBounds(150, 190, 150, 30);
+        idLabel.setBounds(200, 50, 160, 32);
+        nameLabel.setBounds(200, 110, 160, 32);
+        ageLabel.setBounds(200, 170, 160, 32);
+        phoneLabel.setBounds(200, 230, 160, 32);
 
         add(idLabel); add(nameLabel); add(ageLabel); add(phoneLabel);
 
@@ -79,10 +82,10 @@ public class MainFrame extends JFrame {
         ageField = new JTextField();
         phoneField = new JTextField();
 
-        idField.setBounds(300, 40, 300, 30);
-        nameField.setBounds(300, 90, 300, 30);
-        ageField.setBounds(300, 140, 300, 30);
-        phoneField.setBounds(300, 190, 300, 30);
+        idField.setBounds(380, 50, 420, 34);
+        nameField.setBounds(380, 110, 420, 34);
+        ageField.setBounds(380, 170, 420, 34);
+        phoneField.setBounds(380, 230, 420, 34);
 
         add(idField); add(nameField); add(ageField); add(phoneField);
 
@@ -90,37 +93,43 @@ public class MainFrame extends JFrame {
         regularButton = new JButton("Add Regular");
         premiumButton = new JButton("Add Premium");
         displayButton = new JButton("Display Members");
+        deleteMemberBtn = new JButton("Delete Member");
 
-        regularButton.setBounds(100, 260, 180, 40);
-        premiumButton.setBounds(310, 260, 180, 40);
-        displayButton.setBounds(520, 260, 180, 40);
+        regularButton.setBounds(40, 315, 210, 48);
+        premiumButton.setBounds(280, 315, 210, 48);
+        displayButton.setBounds(520, 315, 210, 48);
+        deleteMemberBtn.setBounds(760, 315, 200, 48);
 
-        add(regularButton); add(premiumButton); add(displayButton);
+        add(regularButton); add(premiumButton); add(displayButton); add(deleteMemberBtn);
 
         // --- ROW 2: Trainers (Vector) ---
         addTrainerBtn = new JButton("Add Trainer");
         showTrainersBtn = new JButton("Show Trainers");
+        deleteTrainerBtn = new JButton("Delete Trainer");
         
-        addTrainerBtn.setBounds(100, 320, 285, 40);
-        showTrainersBtn.setBounds(415, 320, 285, 40);
+        addTrainerBtn.setBounds(140, 395, 210, 48);
+        showTrainersBtn.setBounds(395, 395, 210, 48);
+        deleteTrainerBtn.setBounds(650, 395, 210, 48);
         
-        add(addTrainerBtn); add(showTrainersBtn);
+        add(addTrainerBtn); add(showTrainersBtn); add(deleteTrainerBtn);
 
         // --- ROW 3: Schedules (Queue) ---
         addScheduleBtn = new JButton("Add Schedule");
         processScheduleBtn = new JButton("Process Schedule");
-        
-        addScheduleBtn.setBounds(100, 380, 285, 40);
-        processScheduleBtn.setBounds(415, 380, 285, 40);
+        showSchedulesBtn = new JButton("Display Schedules");
 
-        add(addScheduleBtn); add(processScheduleBtn);
+        addScheduleBtn.setBounds(140, 475, 210, 48);
+        processScheduleBtn.setBounds(395, 475, 210, 48);
+        showSchedulesBtn.setBounds(650, 475, 210, 48);
+
+        add(addScheduleBtn); add(processScheduleBtn); add(showSchedulesBtn);
 
         // --- ROW 4: Threads, File I/O & Stack ---
         reportBtn = new JButton("Save Report (Thread)");
         recentActionBtn = new JButton("Last Action (Stack)");
 
-        reportBtn.setBounds(100, 440, 285, 40);
-        recentActionBtn.setBounds(415, 440, 285, 40);
+        reportBtn.setBounds(200, 555, 270, 48);
+        recentActionBtn.setBounds(530, 555, 270, 48);
 
         add(reportBtn); add(recentActionBtn);
 
@@ -128,7 +137,7 @@ public class MainFrame extends JFrame {
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(outputArea);
-        scrollPane.setBounds(100, 500, 600, 180);
+        scrollPane.setBounds(60, 625, 880, 215);
         add(scrollPane);
 
         // ====== EVENT LISTENERS ======
@@ -151,20 +160,35 @@ public class MainFrame extends JFrame {
             }
         });
 
+        deleteMemberBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                deleteMember();
+            }
+        });
+
         // Demonstrates Vector
         addTrainerBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String tName = JOptionPane.showInputDialog("Enter Trainer Name:");
-                if (tName != null && !tName.trim().isEmpty()) {
-                    Trainer trainer = new Trainer(0, tName.trim(), "General Fitness", "9876543210");
-                    try {
-                        Trainer savedTrainer = trainerService.addTrainer(trainer);
-                        recentActions.push("Added Trainer: " + savedTrainer.getName()); // Demonstrates Stack
-                        outputArea.setText("Trainer saved to the database with ID "
-                                + savedTrainer.getTrainerId() + ".");
-                    } catch (SQLException ex) {
-                        showDatabaseError(ex);
-                    }
+                if (tName == null || tName.trim().isEmpty()) {
+                    return;
+                }
+
+                String specialization = JOptionPane.showInputDialog(
+                        "Enter Trainer Specialization (e.g. Yoga, Strength Training):");
+                if (specialization == null || specialization.trim().isEmpty()) {
+                    return;
+                }
+
+                Trainer trainer = new Trainer(
+                        0, tName.trim(), specialization.trim(), "9876543210");
+                try {
+                    Trainer savedTrainer = trainerService.addTrainer(trainer);
+                    recentActions.push("Added Trainer: " + savedTrainer.getName()); // Demonstrates Stack
+                    outputArea.setText("Trainer saved to the database with ID "
+                            + savedTrainer.getTrainerId() + ".");
+                } catch (SQLException ex) {
+                    showDatabaseError(ex);
                 }
             }
         });
@@ -174,7 +198,7 @@ public class MainFrame extends JFrame {
                 outputArea.setText("");
                 for (Trainer trainer : trainerService.getTrainers()) {
                     outputArea.append("ID: " + trainer.getTrainerId() + "\n");
-                    outputArea.append("Name: " + trainer.getName() + "\n");
+                    outputArea.append("Trainer Name: " + trainer.getName() + "\n");
                     outputArea.append("Specialization: " + trainer.getSpecialization() + "\n");
                     outputArea.append("Phone: " + trainer.getPhone() + "\n");
                     outputArea.append("--------------------\n");
@@ -182,6 +206,12 @@ public class MainFrame extends JFrame {
                 if (trainerService.getTrainers().isEmpty()) {
                     outputArea.setText("No trainers saved yet.");
                 }
+            }
+        });
+
+        deleteTrainerBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                deleteTrainer();
             }
         });
 
@@ -200,7 +230,7 @@ public class MainFrame extends JFrame {
                 if (trainerIdInput == null) {
                     return;
                 }
-                String dateInput = JOptionPane.showInputDialog("Enter date (YYYY-MM-DD):");
+                String dateInput = JOptionPane.showInputDialog("Enter date (DD-MM-YYYY):");
                 if (dateInput == null) {
                     return;
                 }
@@ -213,12 +243,22 @@ public class MainFrame extends JFrame {
                     int memberId = Integer.parseInt(memberIdInput.trim());
                     int trainerId = Integer.parseInt(trainerIdInput.trim());
                     Member member = memberService.searchMember(memberId);
-                    Trainer trainer = trainerService.getTrainers().stream()
-                            .filter(item -> item.getTrainerId() == trainerId)
-                            .findFirst()
-                            .orElseThrow(() -> new IllegalArgumentException(
-                                    "Trainer ID " + trainerId + " was not found."));
-                    String date = LocalDate.parse(dateInput.trim()).toString();
+                    Trainer trainer = null;
+                    for (Trainer item : trainerService.getTrainers()) {
+                        if (item.getTrainerId() == trainerId) {
+                            trainer = item;
+                            break;
+                        }
+                    }
+                    if (trainer == null) {
+                        throw new IllegalArgumentException(
+                                "Trainer ID " + trainerId + " was not found.");
+                    }
+                    String date = LocalDate.parse(
+                            dateInput.trim(),
+                            DateTimeFormatter.ofPattern("dd-MM-uuuu")
+                                    .withResolverStyle(ResolverStyle.STRICT)
+                    ).toString();
                     String time = LocalTime.parse(timeInput.trim()).toString();
                     FitnessSchedule schedule = new FitnessSchedule(
                             0, memberId, trainerId, member.getName(), trainer.getName(),
@@ -239,8 +279,18 @@ public class MainFrame extends JFrame {
 
         processScheduleBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                outputArea.setText("Processing next schedule...\nCheck console for details.");
-                scheduleService.processSchedule(); // FIFO Processing
+                FitnessSchedule schedule = scheduleService.processSchedule();
+                if (schedule == null) {
+                    outputArea.setText("No schedules available.");
+                } else {
+                    outputArea.setText(formatSchedule(schedule));
+                }
+            }
+        });
+
+        showSchedulesBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                displaySchedules();
             }
         });
 
@@ -308,31 +358,142 @@ public class MainFrame extends JFrame {
 
     private void displayMembers() {
         outputArea.setText("");
+        if (memberService.getMembers().isEmpty()) {
+            outputArea.setText("No members saved yet.");
+            return;
+        }
         for (Member member : memberService.getMembers()) {
             outputArea.append("ID: " + member.getMemberId() + "\n");
             outputArea.append("Name: " + member.getName() + "\n");
             outputArea.append("Age: " + member.getAge() + "\n");
             outputArea.append("Phone: " + member.getPhone() + "\n");
+            outputArea.append("Membership Status: " + getMembershipStatus(member) + "\n");
             outputArea.append("--------------------\n");
         }
     }
 
+    private void deleteMember() {
+        String input = JOptionPane.showInputDialog(this, "Enter Member ID to delete:");
+        if (input == null) {
+            return;
+        }
+
+        try {
+            int memberId = Integer.parseInt(input.trim());
+            int confirmation = JOptionPane.showConfirmDialog(
+                    this,
+                    "Delete member " + memberId + " and all schedules linked to this member?",
+                    "Confirm Member Deletion",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+            if (confirmation != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            memberService.removeMember(memberId);
+            scheduleService.removeSchedulesForMember(memberId);
+            recentActions.push("Deleted Member ID: " + memberId);
+            outputArea.setText("Member " + memberId + " and linked schedules were deleted.");
+        } catch (NumberFormatException e) {
+            outputArea.setText("Please enter a valid numeric Member ID.");
+        } catch (MemberNotFoundException e) {
+            outputArea.setText(e.getMessage());
+        } catch (SQLException e) {
+            showDatabaseError(e);
+        }
+    }
+
+    private void deleteTrainer() {
+        String input = JOptionPane.showInputDialog(this, "Enter Trainer ID to delete:");
+        if (input == null) {
+            return;
+        }
+
+        try {
+            int trainerId = Integer.parseInt(input.trim());
+            int confirmation = JOptionPane.showConfirmDialog(
+                    this,
+                    "Delete trainer " + trainerId + " and all schedules linked to this trainer?",
+                    "Confirm Trainer Deletion",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+            if (confirmation != JOptionPane.YES_OPTION) {
+                return;
+            }
+
+            if (!trainerService.removeTrainer(trainerId)) {
+                outputArea.setText("Trainer with ID " + trainerId + " was not found.");
+                return;
+            }
+
+            scheduleService.removeSchedulesForTrainer(trainerId);
+            recentActions.push("Deleted Trainer ID: " + trainerId);
+            outputArea.setText("Trainer " + trainerId + " and linked schedules were deleted.");
+        } catch (NumberFormatException e) {
+            outputArea.setText("Please enter a valid numeric Trainer ID.");
+        } catch (SQLException e) {
+            showDatabaseError(e);
+        }
+    }
+
+    private void displaySchedules() {
+        outputArea.setText("");
+        if (scheduleService.getSchedules().isEmpty()) {
+            outputArea.setText("No schedules saved yet.");
+            return;
+        }
+
+        for (FitnessSchedule schedule : scheduleService.getSchedules()) {
+            outputArea.append(formatSchedule(schedule));
+            outputArea.append("--------------------\n");
+        }
+    }
+
+    private String formatSchedule(FitnessSchedule schedule) {
+        StringBuilder details = new StringBuilder();
+        details.append("Schedule ID: ").append(schedule.getScheduleId()).append("\n");
+        details.append("Member Name: ").append(schedule.getMemberName()).append("\n");
+        details.append("Membership Status: ")
+                .append(getMembershipStatus(schedule.getMemberId())).append("\n");
+        details.append("Trainer Name: ").append(schedule.getTrainerName()).append("\n");
+        details.append("Activity Name: ").append(schedule.getActivity()).append("\n");
+        details.append("Date: ").append(schedule.getDate()).append("\n");
+        details.append("Time: ").append(schedule.getTime()).append("\n");
+        return details.toString();
+    }
+
+    private String getMembershipStatus(int memberId) {
+        try {
+            return getMembershipStatus(memberService.searchMember(memberId));
+        } catch (MemberNotFoundException e) {
+            return "Unknown";
+        }
+    }
+
+    private String getMembershipStatus(Member member) {
+        return member instanceof PremiumMember ? "Premium" : "Regular";
+    }
+
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                DatabaseSetup.initializeDatabase();
-                new MainFrame();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(
-                        null,
-                        "Could not connect to or initialize MySQL.\n"
-                                + "Check that MySQL is running, the JDBC driver is available, "
-                                + "and the configured credentials are correct.\n\n"
-                                + e.getMessage(),
-                        "Database startup failed",
-                        JOptionPane.ERROR_MESSAGE
-                );
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    DatabaseSetup.initializeDatabase();
+                    new MainFrame();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Could not connect to or initialize MySQL.\n"
+                                    + "Check that MySQL is running, the JDBC driver is available, "
+                                    + "and the configured credentials are correct.\n\n"
+                                    + e.getMessage(),
+                            "Database startup failed",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
             }
         });
     }
