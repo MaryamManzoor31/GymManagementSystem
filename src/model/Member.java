@@ -15,14 +15,12 @@ public abstract class Member implements Displayable {
     public static final int MIN_AGE = 16;
     public static final int MAX_AGE = 70;
 
-    // Constructor: initializes the member properties and increases the global count.
+    // Constructor: initializes the member properties.
     public Member(int memberId, String name, int age, String phone) {
         this.memberId = memberId;
         this.name = name;
         this.age = age;
         this.phone = phone;
-
-        memberCount++;
     }
 
     // Getters: used by service classes to read member information.
@@ -76,5 +74,13 @@ public abstract class Member implements Displayable {
     // Static counter used by report generation to show total members.
     public static int getMemberCount() {
         return memberCount;
+    }
+
+    public static void incrementMemberCount() {
+        memberCount++;
+    }
+
+    public static void setMemberCount(int count) {
+        memberCount = count;
     }
 }

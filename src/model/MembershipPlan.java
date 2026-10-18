@@ -16,6 +16,26 @@ public class MembershipPlan {
         this.price = price;
     }
 
+    public MembershipPlan(String planName, int duration, double price) {
+        this(0, planName, duration, price);
+    }
+
+    public int getPlanId() {
+        return planId;
+    }
+
+    public String getPlanName() {
+        return planName;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
     public void displayPlan() {
 
         System.out.println("Plan ID: " + planId);
