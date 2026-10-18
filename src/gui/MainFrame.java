@@ -1,5 +1,8 @@
 package gui;
 
+import java.sql.SQLException;
+import java.util.List;
+
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,7 +31,10 @@ public class MainFrame extends JFrame {
     JTextField idField, nameField, ageField, phoneField;
 
     JButton regularButton, premiumButton, displayButton;
+
     JButton addTrainerBtn, showTrainersBtn;
+    JButton updateTrainerBtn, deleteTrainerBtn;
+
     JButton addScheduleBtn, processScheduleBtn;
     JButton reportBtn, recentActionBtn;
 
@@ -88,14 +94,23 @@ public class MainFrame extends JFrame {
 
         add(regularButton); add(premiumButton); add(displayButton);
 
-        // --- ROW 2: Trainers (Vector) ---
+        
+        // --- ROW 2: Trainers (MySQL CRUD) ---
         addTrainerBtn = new JButton("Add Trainer");
         showTrainersBtn = new JButton("Show Trainers");
-        
-        addTrainerBtn.setBounds(100, 320, 285, 40);
-        showTrainersBtn.setBounds(415, 320, 285, 40);
-        
-        add(addTrainerBtn); add(showTrainersBtn);
+        updateTrainerBtn = new JButton("Update Trainer");
+        deleteTrainerBtn = new JButton("Delete Trainer");
+
+        addTrainerBtn.setBounds(70, 320, 155, 40);
+        showTrainersBtn.setBounds(245, 320, 155, 40);
+        updateTrainerBtn.setBounds(420, 320, 155, 40);
+        deleteTrainerBtn.setBounds(595, 320, 155, 40);
+
+        add(addTrainerBtn);
+        add(showTrainersBtn);
+        add(updateTrainerBtn);
+        add(deleteTrainerBtn);
+
 
         // --- ROW 3: Schedules (Queue) ---
         addScheduleBtn = new JButton("Add Schedule");
