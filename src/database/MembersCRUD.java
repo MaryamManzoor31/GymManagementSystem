@@ -2,7 +2,6 @@
 package database;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -10,17 +9,11 @@ import java.util.Scanner;
 
 public class MembersCRUD {
 
-    private static final String URL =
-        "jdbc:mysql://localhost:3306/gym_management";
-
-    private static final String USER = "root";
-    private static final String PASSWORD = "Maryam";
-
     private static final Scanner sc = new Scanner(System.in);
 
     // Establish a connection to MySQL
     private static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        return DatabaseConnection.getConnection();
     }
 
     public static void main(String[] args) {

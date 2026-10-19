@@ -5,74 +5,37 @@ import model.FitnessSchedule;
 
 import java.sql.SQLException;
 import java.util.Iterator;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
-// Module M3: Schedule management service.
-// This class uses a Queue to handle fitness schedules in FIFO order.
+// Keeps schedules in a Queue and stores new schedules in MySQL.
 public class ScheduleService {
 
-    private Queue<FitnessSchedule> schedules;
-    private final ScheduleDao scheduleDao;
-
-    public ScheduleService() {
-        schedules = new LinkedList<>();
-        scheduleDao = new ScheduleDao();
-    }
+    private final Queue<FitnessSchedule> schedules = new LinkedList<>();
+    private final ScheduleDao scheduleDao = new ScheduleDao();
 
     public void loadFromDatabase() throws SQLException {
         schedules.clear();
         schedules.addAll(scheduleDao.getAllSchedules());
     }
 
-    // Adds a new schedule to the queue; the first inserted schedule is processed first.
     public FitnessSchedule addSchedule(FitnessSchedule schedule) throws SQLException {
-        int scheduleId = scheduleDao.addSchedule(schedule);
-        FitnessSchedule savedSchedule = new FitnessSchedule(
-                scheduleId,
-                schedule.getMemberId(),
-                schedule.getTrainerId(),
-                schedule.getMemberName(),
-                schedule.getTrainerName(),
-                schedule.getActivity(),
-                schedule.getDate(),
-                schedule.getTime()
-        );
-        schedules.add(savedSchedule);
-
-        System.out.println("Schedule added.");
-        return savedSchedule;
+        int id = scheduleDao.addSchedule(schedule);
+        FitnessSchedule saved = new FitnessSchedule(id, schedule.getMemberId(), schedule.getTrainerId(),
+                schedule.getMemberName(), schedule.getTrainerName(), schedule.getActivity(),
+                schedule.getDate(), schedule.getTime());
+        schedules.add(saved);
+        return saved;
     }
 
-    // Removes and processes the earliest schedule in the queue.
     public FitnessSchedule processSchedule() {
-
-        if (schedules.isEmpty()) {
-            System.out.println("No schedules available.");
-            return null;
-        }
-
-        FitnessSchedule schedule = schedules.remove();
-        schedule.displaySchedule();
-        return schedule;
+        if (schedules.isEmpty()) return null;
+        return schedules.remove();
     }
 
-    // Displays all pending schedules remaining in the queue.
     public void displaySchedules() {
-
-        if (schedules.isEmpty()) {
-
-            System.out.println("No schedules available.");
-            return;
-        }
-
-        for (FitnessSchedule schedule : schedules) {
-
-            schedule.displaySchedule();
-
-            System.out.println("----------------------");
-        }
+        for (FitnessSchedule schedule : schedules) schedule.displaySchedule();
     }
 
     public List<FitnessSchedule> getSchedules() {
@@ -82,20 +45,14 @@ public class ScheduleService {
     public void removeSchedulesForMember(int memberId) {
         Iterator<FitnessSchedule> iterator = schedules.iterator();
         while (iterator.hasNext()) {
-            FitnessSchedule schedule = iterator.next();
-            if (schedule.getMemberId() == memberId) {
-                iterator.remove();
-            }
+            if (iterator.next().getMemberId() == memberId) iterator.remove();
         }
     }
 
     public void removeSchedulesForTrainer(int trainerId) {
         Iterator<FitnessSchedule> iterator = schedules.iterator();
         while (iterator.hasNext()) {
-            FitnessSchedule schedule = iterator.next();
-            if (schedule.getTrainerId() == trainerId) {
-                iterator.remove();
-            }
+            if (iterator.next().getTrainerId() == trainerId) iterator.remove();
         }
     }
 }

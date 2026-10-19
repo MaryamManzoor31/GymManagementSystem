@@ -7,20 +7,14 @@ import exception.InvalidAgeException;
 import exception.InvalidPhoneException;
 import exception.MemberNotFoundException;
 
-import java.util.ArrayList;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
-// Module M3: Member management service.
-// This class handles member registration, validation, lookup, and removal using an ArrayList.
+// Handles member validation and keeps the GUI's member list in sync with MySQL.
 public class MemberService {
 
-    private ArrayList<Member> members;
-    private final MemberDao memberDao;
-
-    public MemberService() {
-        members = new ArrayList<>();
-        memberDao = new MemberDao();
-    }
+    private final ArrayList<Member> members = new ArrayList<>();
+    private final MemberDao memberDao = new MemberDao();
 
     public void loadFromDatabase() throws SQLException {
         members.clear();
@@ -28,113 +22,70 @@ public class MemberService {
         Member.setMemberCount(members.size());
     }
 
-    // Adds a new member after validating age and phone number rules.
     public void addMember(Member member)
-            throws DuplicateMemberIdException, InvalidAgeException, InvalidPhoneException, SQLException {
-
-        for (Member existingMember : members) {
-            if (existingMember.getMemberId() == member.getMemberId()) {
-                throw new DuplicateMemberIdException(
-                        "A member with ID " + member.getMemberId() + " already exists."
-                );
-            }
-        }
-
-        validateAge(member.getAge());
-        validatePhone(member.getPhone());
+            throws DuplicateMemberIdException, InvalidAgeException,
+                   InvalidPhoneException, SQLException {
+        validateMember(member.getName(), member.getAge(), member.getPhone());
 
         if (memberDao.exists(member.getMemberId())) {
             throw new DuplicateMemberIdException(
-                    "A member with ID " + member.getMemberId() + " already exists."
-            );
+                "A member with ID " + member.getMemberId() + " already exists.");
         }
 
         memberDao.addMember(member);
         members.add(member);
-        Member.incrementMemberCount();
-
-        System.out.println("Member added successfully.");
+        Member.setMemberCount(members.size());
     }
 
-    // Validates member age against the allowed gym age range.
-    public void validateAge(int age)
-            throws InvalidAgeException {
+    public void updateMember(int id, String name, int age, String phone)
+            throws MemberNotFoundException, InvalidAgeException,
+                   InvalidPhoneException, SQLException {
+        Member existing = searchMember(id);
+        validateMember(name, age, phone);
 
+        existing.setName(name.trim());
+        existing.setAge(age);
+        existing.setPhone(phone.trim());
+        if (!memberDao.updateMember(existing)) {
+            throw new MemberNotFoundException("Member with ID " + id + " not found.");
+        }
+    }
+
+    private void validateMember(String name, int age, String phone)
+            throws InvalidAgeException, InvalidPhoneException {
+        if (name == null || name.trim().isEmpty() || name.trim().length() > 100) {
+            throw new IllegalArgumentException("Name must contain 1-100 characters.");
+        }
+        validateAge(age);
+        validatePhone(phone);
+    }
+
+    public void validateAge(int age) throws InvalidAgeException {
         if (age < Member.MIN_AGE || age > Member.MAX_AGE) {
-
-            throw new InvalidAgeException(
-                    "Age must be between 16 and 70."
-            );
+            throw new InvalidAgeException("Age must be between 16 and 70.");
         }
     }
 
-    // Validates phone number format by checking length and numeric-only digits.
-    public void validatePhone(String phone)
-            throws InvalidPhoneException {
-
-        if (phone.length() != 10) {
-
-            throw new InvalidPhoneException(
-                    "Phone number must contain 10 digits."
-            );
-        }
-
-        for (int i = 0; i < phone.length(); i++) {
-
-            if (!Character.isDigit(phone.charAt(i))) {
-
-                throw new InvalidPhoneException(
-                        "Phone number must contain only digits."
-                );
-            }
+    public void validatePhone(String phone) throws InvalidPhoneException {
+        if (phone == null || !phone.matches("\\d{10}")) {
+            throw new InvalidPhoneException("Phone number must contain exactly 10 digits.");
         }
     }
 
-    // Displays all stored members by iterating the ArrayList.
-    public void displayMembers() {
-
-        if (members.isEmpty()) {
-            System.out.println("No members available.");
-            return;
-        }
-
+    public Member searchMember(int id) throws MemberNotFoundException {
         for (Member member : members) {
-
-            member.displayDetails();
-
-            System.out.println("----------------------");
+            if (member.getMemberId() == id) return member;
         }
+        throw new MemberNotFoundException("Member with ID " + id + " not found.");
     }
 
-    // Searches for a member by ID and throws an exception if not found.
-    public Member searchMember(int id)
-            throws MemberNotFoundException {
-
-        for (Member member : members) {
-
-            if (member.getMemberId() == id) {
-                return member;
-            }
-        }
-
-        throw new MemberNotFoundException(
-                "Member with ID " + id + " not found."
-        );
-    }
-
-    // Removes a member if the ID exists; otherwise the search throws an exception.
-    public void removeMember(int id)
-            throws MemberNotFoundException, SQLException {
-
+    public void removeMember(int id) throws MemberNotFoundException, SQLException {
         Member member = searchMember(id);
         if (!memberDao.deleteMember(id)) {
             throw new MemberNotFoundException("Member with ID " + id + " not found.");
         }
-
         members.remove(member);
         Member.setMemberCount(members.size());
-
-        System.out.println("Member removed successfully.");
     }
 
     public ArrayList<Member> getMembers() {
